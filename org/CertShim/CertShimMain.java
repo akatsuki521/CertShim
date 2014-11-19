@@ -14,6 +14,6 @@ public class CertShimMain{
             System.out.println("Not a SSL connection. Checking not performed.");
             return;
         }
-        boolean converge=JConvergence.check();
+        //boolean converge=JConvergence.check();
     }
 }
