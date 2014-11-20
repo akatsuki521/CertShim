@@ -41,7 +41,10 @@ class CertShimTrans implements ClassFileTransformer{
             String insertedCode="if($3==null) {$3=\"HTTPS\"; System.out.println(\"Host Name Verification Enabled.\");}";
             CtMethod method=targetClass.getDeclaredMethod("checkIdentity");
             method.insertBefore(insertedCode);
-            System.out.println("Method Revise Finished.");
+            System.out.println("Host Name Verification Enforced.");
+            insertedCode="if($4){org.CertShim.CertShimMain.check($3);}";
+            method=targetClass.getDeclaredMethod("checkTrusted");
+            method.insertBefore(insertedCode);
             return targetClass.toBytecode();
 
         }catch(NotFoundException nfe){

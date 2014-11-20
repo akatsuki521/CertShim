@@ -30,7 +30,7 @@ public class JConverge implements SSLCheckable {
         JConverge jc = new JConverge();
         System.out.println( jc.check(args[0], args[1]) );
     }
-    @Override
+
     public boolean check(String shost, String sport) {
         /* Initialize */
         try {

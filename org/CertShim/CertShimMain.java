@@ -8,9 +8,7 @@ import javax.net.ssl.SSLSocket;
 import java.net.Socket;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 
 public class CertShimMain{
@@ -28,18 +26,25 @@ public class CertShimMain{
         String port=""+session.getPeerPort();
         ArrayList<CheckThread> checkings=new ArrayList<CheckThread>();
         checkings.add(new CheckThread(new JConverge(), host, port));
+        ArrayList<Future<Boolean>> futureResults=new ArrayList<Future<Boolean>>();
+        Boolean[] finalResults=new Boolean[checkings.size()];
         //Keep adding if there more module.
         ExecutorService threadPool= Executors.newFixedThreadPool(checkings.size());
         for(CheckThread curThread: checkings){
-            threadPool.execute(curThread);
+            futureResults.add(threadPool.submit(curThread));
         }
         threadPool.shutdown();
-
+        for(int i=0; i<finalResults.length; i++){
+            try {
+                finalResults[i] = futureResults.get(i).get();
+            }catch(InterruptedException | ExecutionException e){
+                System.out.println(e);
+            }
+        }
     }
 }
-class CheckThread extends Thread{
+class CheckThread implements Callable<Boolean>{
     SSLCheckable checkingFunction;
-    boolean result;
     String host;
     String port;
     CheckThread(SSLCheckable checkingFunction, String host, String port){
@@ -48,10 +53,8 @@ class CheckThread extends Thread{
         this.port=port;
     }
     @Override
-    public void run(){
-        result=checkingFunction.check(host, port);
-    }
-    boolean getResult(){
-        return result;
+    public Boolean call(){
+        return checkingFunction.check(host, port);
     }
 }
+
