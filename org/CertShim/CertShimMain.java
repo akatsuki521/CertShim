@@ -17,3 +17,19 @@ public class CertShimMain{
         //boolean converge=JConvergence.check();
     }
 }
+class CheckThread extends Thread{
+    SSLCheckable checkingFunction;
+    boolean result;
+    Socket socket;
+    CheckThread(SSLCheckable checkingFunction, Socket socket){
+        this.checkingFunction=checkingFunction;
+        this.socket=socket;
+    }
+    @Override
+    public void run(){
+        result=checkingFunction.check(socket);
+    }
+    boolean getResult(){
+        return result;
+    }
+}
