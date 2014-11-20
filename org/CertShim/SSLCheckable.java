@@ -6,5 +6,5 @@ import java.net.Socket;
  * Each CA alternative method should implement this interface.
  */
 public interface SSLCheckable {
-    boolean check(String host, int port);
+    boolean check(String host, String port);
 }

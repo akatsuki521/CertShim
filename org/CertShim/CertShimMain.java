@@ -8,6 +8,9 @@ import javax.net.ssl.SSLSocket;
 import java.net.Socket;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 
 public class CertShimMain{
@@ -22,9 +25,15 @@ public class CertShimMain{
             throw new CertificateException("No session. CertShim can't do verification.");
         }
         String host=session.getPeerHost();
-        int port=session.getPeerPort();
-        ArrayList<Thread> checkings=new ArrayList<Thread>();
-        //checkings.add(new Thread(new JCovergeConCurrent()));
+        String port=""+session.getPeerPort();
+        ArrayList<CheckThread> checkings=new ArrayList<CheckThread>();
+        checkings.add(new CheckThread(new JConverge(), host, port));
+        //Keep adding if there more module.
+        ExecutorService threadPool= Executors.newFixedThreadPool(checkings.size());
+        for(CheckThread curThread: checkings){
+            threadPool.execute(curThread);
+        }
+        threadPool.shutdown();
 
     }
 }
@@ -32,8 +41,8 @@ class CheckThread extends Thread{
     SSLCheckable checkingFunction;
     boolean result;
     String host;
-    int port;
-    CheckThread(SSLCheckable checkingFunction, String host, int port){
+    String port;
+    CheckThread(SSLCheckable checkingFunction, String host, String port){
         this.checkingFunction=checkingFunction;
         this.host=host;
         this.port=port;
