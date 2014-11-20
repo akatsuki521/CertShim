@@ -26,21 +26,31 @@ public class CertShimMain{
         String port=""+session.getPeerPort();
         ArrayList<CheckThread> checkings=new ArrayList<CheckThread>();
         checkings.add(new CheckThread(new JConverge(), host, port));
+        /*
+        *
+        * If you have further modules, just keep adding here.
+        *
+        */
         ArrayList<Future<Boolean>> futureResults=new ArrayList<Future<Boolean>>();
         Boolean[] finalResults=new Boolean[checkings.size()];
-        //Keep adding if there more module.
         ExecutorService threadPool= Executors.newFixedThreadPool(checkings.size());
         for(CheckThread curThread: checkings){
             futureResults.add(threadPool.submit(curThread));
         }
         threadPool.shutdown();
+        int counter=0;
         for(int i=0; i<finalResults.length; i++){
             try {
                 finalResults[i] = futureResults.get(i).get();
+                if(finalResults[i]){
+                    counter++;
+                }
             }catch(InterruptedException | ExecutionException e){
                 System.out.println(e);
             }
         }
+        /*TODO Handle the produced results*/
+        System.out.format("CertShim: There are %d out of %d verification passed.\n", counter, finalResults.length);
     }
 }
 class CheckThread implements Callable<Boolean>{
