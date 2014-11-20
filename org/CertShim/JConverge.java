@@ -1,3 +1,5 @@
+package org.CertShim;
+
 import java.util.*;
 import java.io.*;
 import java.net.*;
@@ -15,7 +17,7 @@ import org.apache.commons.codec.binary.*;
 import org.apache.commons.codec.digest.*;
 import org.apache.commons.lang3.StringUtils;
 
-public class JConverge {
+public class JConverge implements SSLCheckable {
     static Connection db;
     static Connection userdb;
     static List<JSONObject> notaries;
@@ -25,10 +27,11 @@ public class JConverge {
     static Boolean debug = true;
 
     public static void main(String[] args){
-        System.out.println( check(args) );
+        JConverge jc = new JConverge();
+        System.out.println( jc.check(args[0], args[1]) );
     }
 
-    public static boolean check(String[] args) {
+    public boolean check(String shost, String sport) {
         /* Initialize */
         try {
             init();
@@ -39,15 +42,10 @@ public class JConverge {
             System.exit(1);
         }
         /* Bail if we have wrong number of args */
-        if (args.length < 2)
-            System.exit(1);
 
-        String host = args[0];
-        String port = args[1];
+        String host = shost;
+        String port = sport;
         String fingerprint = "";
-        if (args.length == 3)
-            fingerprint = args[2].toUpperCase();
-        else {
             try {
                 fingerprint = getFingerprint(host, port);
             } catch (CertificateEncodingException | IOException e) {
@@ -56,7 +54,7 @@ public class JConverge {
                 e.printStackTrace();
                 System.exit(1);
             }
-        }
+
         /* Perform lookup */
         if (debug)
             System.out.println(String.format("[+] Notary lookup: %s:%s - %s",
@@ -75,7 +73,7 @@ public class JConverge {
         return result;
     }
 
-    public static void init() throws Exception {
+    public void init() throws Exception {
         String configPath = "/usr/local/etc/converge/converge.config";
 
         /* Load config */
@@ -114,7 +112,7 @@ public class JConverge {
     }
 
     /* Performs local x509 retrieval */
-    public static String getFingerprint(String host, String port)
+    public String getFingerprint(String host, String port)
             throws IOException, CertificateEncodingException {
 
         /* Open up our connection */
@@ -133,7 +131,7 @@ public class JConverge {
         return fingerprint.toUpperCase();
     }
 
-    public static boolean notarize(String host, String port, String fingerprint) {
+    public boolean notarize(String host, String port, String fingerprint) {
         /* First, check our local cache */
         boolean result;
         try {
@@ -187,13 +185,13 @@ public class JConverge {
         return false;
     }
 
-    public static boolean cacheCheck(String host, String port,
+    public boolean cacheCheck(String host, String port,
                                      String fingerprint) throws SQLException {
         return (_cacheCheck(host, port, fingerprint, db) > 0)
                 || (_cacheCheck(host, port, fingerprint, userdb) > 0);
     }
 
-    private static int _cacheCheck(String host, String port,
+    private int _cacheCheck(String host, String port,
                                    String fingerprint, Connection db) throws SQLException {
         String timestamp = Long.toString((System.currentTimeMillis() / 1000L)
                 - 60L * 60L * 25L * 7L);
@@ -207,7 +205,7 @@ public class JConverge {
         return result;
     }
 
-    public static void cacheUpdate(ConcurrentHashMap<String, Object[]> result,
+    public void cacheUpdate(ConcurrentHashMap<String, Object[]> result,
                                    String host, String port) throws SQLException {
         _cacheUpdate(result, host, port, userdb);
         /* If we can update the global cache, do it */
@@ -215,7 +213,7 @@ public class JConverge {
             _cacheUpdate(result, host, port, db);
     }
 
-    private static void _cacheUpdate(ConcurrentHashMap<String, Object[]> result,
+    private void _cacheUpdate(ConcurrentHashMap<String, Object[]> result,
                                      String host, String port, Connection db) throws SQLException {
         for (Object[] r : result.values()) {
             if ((boolean) r[0]) {
@@ -243,7 +241,7 @@ public class JConverge {
         }
     }
 
-    public static class MyRunnable implements Runnable{
+    public class MyRunnable implements Runnable{
         private final JSONObject host;
         private final String fingerprint;
         private final String remoteHost;
@@ -356,7 +354,7 @@ public class JConverge {
     }
 
     /* TODO implement parallel connections */
-    public static void remoteCheck(String remoteHost, String remotePort, String fingerprint) {
+    public void remoteCheck(String remoteHost, String remotePort, String fingerprint) {
 
         /* Note we don't check SSL validity upon request */
         disableCertificateValidation();
@@ -386,18 +384,18 @@ public class JConverge {
         }
     }
 
-    public static void markitGood(ConcurrentHashMap<String, Object[]> results, String url, JSONObject response) {
+    public void markitGood(ConcurrentHashMap<String, Object[]> results, String url, JSONObject response) {
         Object[] value = { true, response };
         results.put(url, value);
     }
 
-    public static void markitZero(ConcurrentHashMap<String, Object[]> results, String url) {
+    public void markitZero(ConcurrentHashMap<String, Object[]> results, String url) {
         Object[] value = { false };
         results.put(url, value);
     }
 
     /* Source: https://gist.github.com/henrik242/1510165 */
-    public static void disableCertificateValidation() {
+    public void disableCertificateValidation() {
         // Create a trust manager that does not validate certificate chains
         TrustManager[] trustAllCerts = new TrustManager[] { new X509TrustManager() {
             public X509Certificate[] getAcceptedIssuers() {
