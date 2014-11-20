@@ -3,8 +3,8 @@ package org.CertShim;
 import java.net.Socket;
 
 /**
- * Created by hanjiajun on 11/19/14.
+ * Each CA alternative method should implement this interface.
  */
 public interface SSLCheckable {
-    boolean check(Socket socket);
+    boolean check(String host, int port);
 }
