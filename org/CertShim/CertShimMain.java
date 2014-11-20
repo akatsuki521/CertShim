@@ -24,7 +24,7 @@ public class CertShimMain{
         String host=session.getPeerHost();
         int port=session.getPeerPort();
         ArrayList<Thread> checkings=new ArrayList<Thread>();
-        //checkings.add(new Thread(new JCovergence(host, port)));
+        //checkings.add(new Thread(new JCovergeConCurrent()));
 
     }
 }
