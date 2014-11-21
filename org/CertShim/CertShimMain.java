@@ -18,7 +18,7 @@ public class CertShimMain{
             return;
         }
         SSLSocket sslSocket=(SSLSocket)socket;
-        SSLSession session=sslSocket.getHandshakeSession();
+        SSLSession session=sslSocket.getSession();
         if(session==null){
             throw new CertificateException("No session. CertShim can't do verification.");
         }

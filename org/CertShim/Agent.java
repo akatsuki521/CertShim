@@ -25,27 +25,37 @@ class CertShimTrans implements ClassFileTransformer{
         throws IllegalClassFormatException{
 
         //System.out.println("Invoked class name: "+className);
-        final String tar="javax.net.ssl.X509ExtendedTrustManager";
         ClassPool pool=ClassPool.getDefault();
-        CtClass curClass, supClass;
+        CtClass curClass;
+        String insertedCode;
+        CtMethod method;
         try{
 
-            curClass=pool.get(className.replace('/','.'));
-            supClass=curClass.getSuperclass();
-            if(supClass.getName().equals(tar)){
-                System.out.println("Find X509ExtendTrustedManager implementation: "+className);
-            }else{
-                return null;
+            switch(className){
+                case "javax.net.ssl.X509ExtendedTrustManager":
+                    curClass=pool.get(className.replace('/','.'));
+                    insertedCode="if($3==null) {$3=\"HTTPS\"; System.out.println(\"Host Name Verification performed.\");}";
+                    method=curClass.getDeclaredMethod("checkIdentity");
+                    method.insertBefore(insertedCode);
+//                    insertedCode="if($4){org.CertShim.CertShimMain.check($3);}";
+//                    method=curClass.getDeclaredMethod("checkTrusted");
+//                    method.insertBefore(insertedCode);
+                    break;
+                case "javax/net/ssl/SSLParameters":
+                    curClass=pool.get(className.replace('/','.'));
+                    insertedCode="{ if($1==null) $1=\"HTTPS\";}";
+                    method=curClass.getDeclaredMethod("setEndpointIdentificationAlgorithm");
+                    method.insertBefore(insertedCode);
+                    break;
+                default:return null;
+
+
             }
-            CtClass targetClass=curClass;
-            String insertedCode="if($3==null) {$3=\"HTTPS\"; System.out.println(\"Host Name Verification Enabled.\");}";
-            CtMethod method=targetClass.getDeclaredMethod("checkIdentity");
-            method.insertBefore(insertedCode);
             System.out.println("Host Name Verification Enforced.");
-            insertedCode="if($4){org.CertShim.CertShimMain.check($3);}";
-            method=targetClass.getDeclaredMethod("checkTrusted");
-            method.insertBefore(insertedCode);
-            return targetClass.toBytecode();
+            //insertedCode="if($4){org.CertShim.CertShimMain.check($3);}";
+            //method=targetClass.getDeclaredMethod("checkTrusted");
+            //method.insertBefore(insertedCode);
+            return curClass.toBytecode();
 
         }catch(NotFoundException nfe){
             //e.printStackTrace();
