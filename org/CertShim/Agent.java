@@ -32,7 +32,7 @@ class CertShimTrans implements ClassFileTransformer{
         try{
 
             switch(className){
-                case "javax/net/ssl/X509ExtendedTrustManager":
+                case "sun/security/ssl/X509TrustManagerImpl":
                     curClass=pool.get(className.replace('/','.'));
                     System.out.println(className);
                     insertedCode="{if($3==null) $3=\"HTTPS\"; System.out.println(\"Host Name Verification performed.\");}";
