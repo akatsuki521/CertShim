@@ -38,9 +38,9 @@ class CertShimTrans implements ClassFileTransformer{
                     insertedCode="{if($3==null) $3=\"HTTPS\"; System.out.println(\"Host Name Verification performed.\");}";
                     method=curClass.getDeclaredMethod("checkIdentity");
                     method.insertBefore(insertedCode);
-//                    insertedCode="if($4){org.CertShim.CertShimMain.check($3);}";
-//                    method=curClass.getDeclaredMethod("checkTrusted");
-//                    method.insertBefore(insertedCode);
+                    insertedCode="if($4){org.CertShim.CertShimMain.check($3);}";
+                    method=curClass.getDeclaredMethod("checkTrusted");
+                    method.insertBefore(insertedCode);
                     break;
                 case "javax/net/ssl/SSLParameters":
                     System.out.println(className);
@@ -53,13 +53,9 @@ class CertShimTrans implements ClassFileTransformer{
 
 
             }
-            //insertedCode="if($4){org.CertShim.CertShimMain.check($3);}";
-            //method=targetClass.getDeclaredMethod("checkTrusted");
-            //method.insertBefore(insertedCode);
             return curClass.toBytecode();
 
         }catch(NotFoundException nfe){
-            //e.printStackTrace();
             System.out.println("Unhandled class is "+className);
             return null;
         }catch(CannotCompileException cce){

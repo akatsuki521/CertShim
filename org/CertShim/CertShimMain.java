@@ -20,12 +20,13 @@ public class CertShimMain{
         SSLSocket sslSocket=(SSLSocket)socket;
         SSLSession session=sslSocket.getSession();
         if(session==null){
+            System.out.println("Null session");
             throw new CertificateException("No session. CertShim can't do verification.");
         }
 //        String host=session.getPeerHost();
 //        String port=""+session.getPeerPort();
-        ArrayList<CheckThread> checkings=new ArrayList<CheckThread>();
-        checkings.add(new CheckThread(new JConverge(), session));
+        ArrayList<CheckThread> checkings=new ArrayList<>();
+        //checkings.add(new CheckThread(new JConverge(), session));
         /*
         *
         * If you have further modules, just keep adding here.

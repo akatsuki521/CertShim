@@ -31,7 +31,7 @@ public class JConverge implements SSLCheckable {
 //        System.out.println( jc.check(args[0], args[1]) );
 //    }
 
-    public boolean check(String shost, String sport) {
+    public boolean check(SSLSession session) {
         /* Initialize */
         try {
             init();
@@ -43,8 +43,8 @@ public class JConverge implements SSLCheckable {
         }
         /* Bail if we have wrong number of args */
 
-        String host = shost;
-        String port = sport;
+        String host = session.getPeerHost();
+        String port = ""+session.getPeerPort();
         String fingerprint = "";
             try {
                 fingerprint = getFingerprint(host, port);
@@ -353,7 +353,7 @@ public class JConverge implements SSLCheckable {
         }
     }
 
-    /* TODO implement parallel connections */
+
     public void remoteCheck(String remoteHost, String remotePort, String fingerprint) {
 
         /* Note we don't check SSL validity upon request */
