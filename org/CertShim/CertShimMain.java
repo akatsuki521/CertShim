@@ -22,10 +22,10 @@ public class CertShimMain{
         if(session==null){
             throw new CertificateException("No session. CertShim can't do verification.");
         }
-        String host=session.getPeerHost();
-        String port=""+session.getPeerPort();
+//        String host=session.getPeerHost();
+//        String port=""+session.getPeerPort();
         ArrayList<CheckThread> checkings=new ArrayList<CheckThread>();
-        checkings.add(new CheckThread(new JConverge(), host, port));
+        checkings.add(new CheckThread(new JConverge(), session));
         /*
         *
         * If you have further modules, just keep adding here.
@@ -55,16 +55,14 @@ public class CertShimMain{
 }
 class CheckThread implements Callable<Boolean>{
     SSLCheckable checkingFunction;
-    String host;
-    String port;
-    CheckThread(SSLCheckable checkingFunction, String host, String port){
+    SSLSession session;
+    CheckThread(SSLCheckable checkingFunction, SSLSession session){
         this.checkingFunction=checkingFunction;
-        this.host=host;
-        this.port=port;
+        this.session=session;
     }
     @Override
     public Boolean call(){
-        return checkingFunction.check(host, port);
+        return checkingFunction.check(session);
     }
 }
 

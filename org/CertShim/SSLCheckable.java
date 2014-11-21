@@ -1,10 +1,10 @@
 package org.CertShim;
 
-import java.net.Socket;
+import javax.net.ssl.SSLSession;
 
 /**
  * Each CA alternative method should implement this interface.
  */
 public interface SSLCheckable {
-    boolean check(String host, String port);
+    boolean check(SSLSession session);
 }

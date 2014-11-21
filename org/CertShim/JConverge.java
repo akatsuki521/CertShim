@@ -26,10 +26,10 @@ public class JConverge implements SSLCheckable {
 
     static Boolean debug = true;
 
-    public static void main(String[] args){
-        JConverge jc = new JConverge();
-        System.out.println( jc.check(args[0], args[1]) );
-    }
+//    public static void main(String[] args){
+//        JConverge jc = new JConverge();
+//        System.out.println( jc.check(args[0], args[1]) );
+//    }
 
     public boolean check(String shost, String sport) {
         /* Initialize */
