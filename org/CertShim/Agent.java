@@ -32,9 +32,10 @@ class CertShimTrans implements ClassFileTransformer{
         try{
 
             switch(className){
-                case "javax.net.ssl.X509ExtendedTrustManager":
+                case "javax/net/ssl/X509ExtendedTrustManager":
                     curClass=pool.get(className.replace('/','.'));
-                    insertedCode="if($3==null) {$3=\"HTTPS\"; System.out.println(\"Host Name Verification performed.\");}";
+                    System.out.println(className);
+                    insertedCode="{if($3==null) $3=\"HTTPS\"; System.out.println(\"Host Name Verification performed.\");}";
                     method=curClass.getDeclaredMethod("checkIdentity");
                     method.insertBefore(insertedCode);
 //                    insertedCode="if($4){org.CertShim.CertShimMain.check($3);}";
@@ -42,8 +43,9 @@ class CertShimTrans implements ClassFileTransformer{
 //                    method.insertBefore(insertedCode);
                     break;
                 case "javax/net/ssl/SSLParameters":
+                    System.out.println(className);
                     curClass=pool.get(className.replace('/','.'));
-                    insertedCode="{ if($1==null) $1=\"HTTPS\";}";
+                    insertedCode="{ if($1==null) $1=\"HTTPS\"; System.out.println(\"Algorithm set.\");}";
                     method=curClass.getDeclaredMethod("setEndpointIdentificationAlgorithm");
                     method.insertBefore(insertedCode);
                     break;
@@ -51,7 +53,6 @@ class CertShimTrans implements ClassFileTransformer{
 
 
             }
-            System.out.println("Host Name Verification Enforced.");
             //insertedCode="if($4){org.CertShim.CertShimMain.check($3);}";
             //method=targetClass.getDeclaredMethod("checkTrusted");
             //method.insertBefore(insertedCode);
