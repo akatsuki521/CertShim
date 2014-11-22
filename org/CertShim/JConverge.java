@@ -33,6 +33,7 @@ public class JConverge implements SSLCheckable {
 
     public boolean check(SSLSession session) {
         /* Initialize */
+        System.out.println("JConverge Starts.");
         try {
             init();
         } catch (Exception e) {

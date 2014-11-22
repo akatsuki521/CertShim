@@ -13,6 +13,7 @@ import java.util.concurrent.*;
 
 public class CertShimMain{
     static void check(Socket socket) throws CertificateException{
+        System.out.println("CertShim Main Starts.");
         if(socket==null||!socket.isConnected()||!(socket instanceof SSLSocket)){
             System.out.println("Not a SSL connection. Checking not performed.");
             return;
@@ -23,10 +24,8 @@ public class CertShimMain{
             System.out.println("Null session");
             throw new CertificateException("No session. CertShim can't do verification.");
         }
-//        String host=session.getPeerHost();
-//        String port=""+session.getPeerPort();
         ArrayList<CheckThread> checkings=new ArrayList<>();
-        //checkings.add(new CheckThread(new JConverge(), session));
+        checkings.add(new CheckThread(new JConverge(), session));
         /*
         *
         * If you have further modules, just keep adding here.
