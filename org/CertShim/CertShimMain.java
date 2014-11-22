@@ -3,23 +3,32 @@ package org.CertShim;
 /**
  * The main frame of CertShim.
  */
+import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
-import java.net.Socket;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.concurrent.*;
 
 
 public class CertShimMain{
-    static void check(Socket socket) throws CertificateException{
+    static void check(Object connection) throws CertificateException{
         System.out.println("CertShim Main Starts.");
-        if(socket==null||!socket.isConnected()||!(socket instanceof SSLSocket)){
-            System.out.println("Not a SSL connection. Checking not performed.");
+        SSLSession session;
+        if(connection instanceof SSLSocket){
+            SSLSocket conn=(SSLSocket)connection;
+            if(!conn.isConnected()){
+                System.out.println("Not connected. Checking not performed.");
+                return;
+            }
+            session=conn.getHandshakeSession();
+        }else if(connection instanceof SSLEngine){
+            SSLEngine conn=(SSLEngine)connection;
+            session=conn.getHandshakeSession();
+        }else{
+            System.out.println("Null input.");
             return;
         }
-        SSLSocket sslSocket=(SSLSocket)socket;
-        SSLSession session=sslSocket.getSession();
         if(session==null){
             System.out.println("Null session");
             throw new CertificateException("No session. CertShim can't do verification.");
