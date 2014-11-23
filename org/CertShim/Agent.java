@@ -12,6 +12,7 @@ import java.lang.instrument.Instrumentation;
 import java.security.ProtectionDomain;
 
 
+
 public class Agent {
     public static void premain(String agentArgs, Instrumentation inst){
         System.out.println("Agent starts.");
@@ -38,7 +39,7 @@ class CertShimTrans implements ClassFileTransformer{
                     insertedCode="{if($3==null) $3=\"HTTPS\"; System.out.println(\"Host Name Verification performed.\");}";
                     method=curClass.getDeclaredMethod("checkIdentity");
                     method.insertBefore(insertedCode);
-                    insertedCode="{if(!$4) org.CertShim.CertShimMain.check($3); System.out.println(\"Main Triggered.\");}";
+                    insertedCode="if(!$4) org.CertShim.CertShimMain.check($3);";
                     CtMethod[] methods=curClass.getDeclaredMethods();
                     for(CtMethod oneMethod: methods){
                         if(oneMethod.getName().equals("checkTrusted")){

@@ -6,29 +6,31 @@ package org.CertShim;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
+import java.net.Socket;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.concurrent.*;
 
 
 public class CertShimMain{
-    static void check(Object connection) throws CertificateException{
-        System.out.println("CertShim Main Starts.");
-        SSLSession session;
-        if(connection instanceof SSLSocket){
-            SSLSocket conn=(SSLSocket)connection;
-            if(!conn.isConnected()){
-                System.out.println("Not connected. Checking not performed.");
-                return;
-            }
-            session=conn.getHandshakeSession();
-        }else if(connection instanceof SSLEngine){
-            SSLEngine conn=(SSLEngine)connection;
-            session=conn.getHandshakeSession();
-        }else{
-            System.out.println("Null input.");
-            return;
+    public static void check(Socket socket) throws CertificateException{
+        if(socket==null||!(socket instanceof SSLSocket)||!socket.isConnected()){
+           System.out.println("Socket error, CertShim not triggered.");
+           return;
         }
+        check(((SSLSocket) socket).getHandshakeSession());
+
+    }
+    public static void check(SSLEngine engine) throws CertificateException{
+        if(engine==null){
+            System.out.println("SSLEngine error, CertShim not triggered.");
+        }
+        check(engine.getHandshakeSession());
+    }
+
+
+    public static void check(SSLSession session) throws CertificateException{
+        System.out.println("CertShim Main Starts.");
         if(session==null){
             System.out.println("Null session");
             throw new CertificateException("No session. CertShim can't do verification.");
@@ -40,7 +42,7 @@ public class CertShimMain{
         * If you have further modules, just keep adding here.
         *
         */
-        ArrayList<Future<Boolean>> futureResults=new ArrayList<Future<Boolean>>();
+        ArrayList<Future<Boolean>> futureResults=new ArrayList<>();
         Boolean[] finalResults=new Boolean[checkings.size()];
         ExecutorService threadPool= Executors.newFixedThreadPool(checkings.size());
         for(CheckThread curThread: checkings){
