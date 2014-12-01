@@ -12,7 +12,6 @@ import java.lang.instrument.Instrumentation;
 import java.security.ProtectionDomain;
 
 
-
 public class Agent {
     public static void premain(String agentArgs, Instrumentation inst){
         System.out.println("Agent starts.");
@@ -30,16 +29,24 @@ class CertShimTrans implements ClassFileTransformer{
         CtClass curClass;
         String insertedCode;
         CtMethod method;
+
         try{
 
             switch(className){
+                /*
+                *
+                * If there are other X509ExtendedTrustManager implementation with same target function. Just add
+                * case "class name":
+                * without break. Current target function is checkIdentity and checkTrusted.
+                *
+                * */
                 case "sun/security/ssl/X509TrustManagerImpl":
                     curClass=pool.get(className.replace('/','.'));
                     System.out.println(className);
                     insertedCode="{if($3==null) $3=\"HTTPS\"; System.out.println(\"Host Name Verification performed.\");}";
                     method=curClass.getDeclaredMethod("checkIdentity");
                     method.insertBefore(insertedCode);
-                    insertedCode="if(!$4) org.CertShim.CertShimMain.check($3);";
+                    insertedCode="{System.out.println(\"Before Main.\"); if(!$4) org.CertShim.CertShimMain.check($3);}";
                     CtMethod[] methods=curClass.getDeclaredMethods();
                     for(CtMethod oneMethod: methods){
                         if(oneMethod.getName().equals("checkTrusted")){

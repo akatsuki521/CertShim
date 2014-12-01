@@ -13,6 +13,7 @@ import java.util.concurrent.*;
 
 
 public class CertShimMain{
+    private CertShimMain(){};
     public static void check(Socket socket) throws CertificateException{
         if(socket==null||!(socket instanceof SSLSocket)||!socket.isConnected()){
            System.out.println("Socket error, CertShim not triggered.");
