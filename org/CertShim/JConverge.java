@@ -14,6 +14,7 @@ import java.security.Signature;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.CountDownLatch;
 
 import org.apache.commons.codec.binary.*;
 import org.apache.commons.codec.digest.*;
@@ -241,12 +242,14 @@ public class JConverge implements SSLCheckable {
         private final String fingerprint;
         private final String remoteHost;
         private final String remotePort;
+        private final CountDownLatch done;
 
-        public MyRunnable(JSONObject host, String fingerprint, String remoteHost, String remotePort){
+        public MyRunnable(JSONObject host, String fingerprint, String remoteHost, String remotePort, CountDownLatch done){
             this.host = host;
             this.fingerprint = fingerprint;
             this.remoteHost = remoteHost;
             this.remotePort = remotePort;
+            this.done = this.done;
         }
 
         @Override
@@ -264,6 +267,7 @@ public class JConverge implements SSLCheckable {
                                 new ByteArrayInputStream(((String) host
                                         .get("certificate")).getBytes()));
             } catch (CertificateException e1) {
+                done.countDown();
                 return;
             }
 
@@ -301,6 +305,7 @@ public class JConverge implements SSLCheckable {
                      */
                 if (connection.getResponseCode() != 200) {
                     markitZero(results, url);
+                    done.countDown();
                     return;
                 }
                 String str;
@@ -316,6 +321,7 @@ public class JConverge implements SSLCheckable {
 
             } catch (IOException e) {
                 markitZero(results, url);
+                done.countDown();
                 return;
             }
 
@@ -345,6 +351,7 @@ public class JConverge implements SSLCheckable {
             } catch (Exception e) {
                 markitZero(results, url);
             }
+            done.countDown();
         }
     }
 
@@ -363,6 +370,7 @@ public class JConverge implements SSLCheckable {
         }
 
         ExecutorService exec = Executors.newFixedThreadPool(hostNum + 1);
+        CountDownLatch done = new CountDownLatch(hostNum);
 
         for (JSONObject notary : notaries) {
             JSONArray hosts = notary.getJSONArray("hosts");
@@ -370,12 +378,15 @@ public class JConverge implements SSLCheckable {
             /* Loop over all hosts in a notary */
             for (int i = 0; i < hosts.length(); i++) {
                 JSONObject host = hosts.getJSONObject(i);
-                Runnable worker = new MyRunnable(host, fingerprint, remoteHost, remotePort);
+                Runnable worker = new MyRunnable(host, fingerprint, remoteHost, remotePort, done);
                 exec.execute(worker);
             }
         }
-        exec.shutdown();
-        while(!exec.isTerminated()){
+        try {
+            done.await();
+            exec.shutdown();
+        } catch (InterruptedException e){
+            e.printStackTrace();
         }
     }
 
