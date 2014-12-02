@@ -5,6 +5,8 @@ import java.io.*;
 import java.net.*;
 import javax.net.ssl.*;
 import java.sql.*;
+
+import org.ibex.nestedvm.*;
 import org.json.*;
 import java.security.cert.*;
 import java.security.SecureRandom;
@@ -22,14 +24,14 @@ public class JConverge implements SSLCheckable {
     static Connection userdb;
     static List<JSONObject> notaries;
     static JSONObject config;
-    static ConcurrentHashMap<String, Object[]> results = new ConcurrentHashMap<String, Object[]>();
+    static ConcurrentHashMap<String, Object[]> results = new ConcurrentHashMap<>();
 
     static Boolean debug = true;
 
     public boolean check(SSLSession session) {
         /* Initialize */
         if(debug) {
-            System.out.println("[+]JConverge Starts.");
+            System.out.println("[+] JConverge Starts.");
         }
         try {
             init();
@@ -57,14 +59,13 @@ public class JConverge implements SSLCheckable {
             System.out.println(String.format("[+] Notary lookup: %s:%s - %s",
                     host, port, fingerprint));
         boolean result = notarize(host, port, fingerprint);
-        System.out.println(result);
         if (result) {
             if(debug)
-                System.out.println("Checking passed.");
-            return result;
+                System.out.println("[+] Checking passed.");
+            return true;
         }
-        System.out.println("Checking not passed.");
-        return result;
+        System.out.println("[-] Checking not passed.");
+        return false;
     }
 
     public void init() throws Exception {
@@ -86,7 +87,7 @@ public class JConverge implements SSLCheckable {
                 config.getString("userdb")));
 
         /* Read our enabled notaries */
-        notaries = new ArrayList<JSONObject>();
+        notaries = new ArrayList<>();
         String path = config.getString("notaries-dir");
         String files, bundlePath;
         File folder = new File(path);
@@ -111,7 +112,7 @@ public class JConverge implements SSLCheckable {
 
         /* Open up our connection */
         String httpsUrl = String.format("https://%s:%s", host,port);
-        System.out.println(httpsUrl);
+        System.out.println("[+] Getting figure print "+httpsUrl);
         URL url = new URL(httpsUrl);
         HttpsURLConnection con = (HttpsURLConnection) url.openConnection();
         disableCertificateValidation(con);
@@ -196,8 +197,7 @@ public class JConverge implements SSLCheckable {
         stmt.setString(1, String.format("%s:%s", host, port));
         stmt.setString(2, fingerprint);
         stmt.setString(3, timestamp);
-        int result = stmt.executeQuery().getInt(1);
-        return result;
+        return stmt.executeQuery().getInt(1);
     }
 
     public void cacheUpdate(ConcurrentHashMap<String, Object[]> result,
@@ -255,9 +255,9 @@ public class JConverge implements SSLCheckable {
             String url = String.format("https://%s:%s/target/%s+%s",
                     this.host.getString("host"), this.host.getInt("ssl_port"),
                     remoteHost, remotePort);
-            System.out.println(url);
+            System.out.println("[+] checking "+url);
                 /* Get the public key out of the cert */
-            Certificate cert = null;
+            Certificate cert;
             try {
                 cert = CertificateFactory.getInstance("X509")
                         .generateCertificate(
@@ -344,7 +344,6 @@ public class JConverge implements SSLCheckable {
                     markitZero(results, url);
             } catch (Exception e) {
                 markitZero(results, url);
-                return;
             }
         }
     }
@@ -426,6 +425,7 @@ public class JConverge implements SSLCheckable {
                     .setSSLSocketFactory(sc.getSocketFactory());
             targetConn.setHostnameVerifier(hv);
         } catch (Exception e) {
+            throw new RuntimeException("Can't disable verification during JConverge.");
         }
     }
 }

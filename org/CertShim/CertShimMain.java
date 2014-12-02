@@ -3,6 +3,7 @@ package org.CertShim;
 /**
  * The main frame of CertShim.
  */
+
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
@@ -13,7 +14,8 @@ import java.util.concurrent.*;
 
 
 public class CertShimMain{
-    private CertShimMain(){};
+    private static boolean isDebug=true;
+    private CertShimMain(){}
     public static void check(Socket socket) throws CertificateException{
         if(socket==null||!(socket instanceof SSLSocket)||!socket.isConnected()){
            System.out.println("Socket error, CertShim not triggered.");
@@ -25,13 +27,14 @@ public class CertShimMain{
     public static void check(SSLEngine engine) throws CertificateException{
         if(engine==null){
             System.out.println("SSLEngine error, CertShim not triggered.");
+            return;
         }
         check(engine.getHandshakeSession());
     }
 
-
     public static void check(SSLSession session) throws CertificateException{
-//        System.out.println("CertShim Main Starts.");
+        if(isDebug)
+            System.out.println("[+]CertShim Main Starts.");
         if(session==null){
             System.out.println("Null session");
             throw new CertificateException("No session. CertShim can't do verification.");
@@ -62,7 +65,8 @@ public class CertShimMain{
             }
         }
         /*TODO Handle the produced results*/
-        System.out.format("CertShim: There are %d out of %d verification passed.\n", counter, finalResults.length);
+        if(isDebug)
+            System.out.format("[+] CertShim: There are %d out of %d verification passed.\n", counter, finalResults.length);
         if(counter==0)
             throw new CertificateException();
     }

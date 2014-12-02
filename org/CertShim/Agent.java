@@ -43,10 +43,10 @@ class CertShimTrans implements ClassFileTransformer{
                 case "sun/security/ssl/X509TrustManagerImpl":
                     curClass=pool.get(className.replace('/','.'));
                     System.out.println(className);
-                    insertedCode="{if($3==null) $3=\"HTTPS\"; System.out.println(\"Host Name Verification performed.\");}";
+                    insertedCode="{if($3==null) $3=\"HTTPS\";}";
                     method=curClass.getDeclaredMethod("checkIdentity");
                     method.insertBefore(insertedCode);
-                    insertedCode="{System.out.println(\"Before Main.\"); if(!$4) org.CertShim.CertShimMain.check($3);}";
+                    insertedCode="{if(!$4) org.CertShim.CertShimMain.check($3);}";
                     CtMethod[] methods=curClass.getDeclaredMethods();
                     for(CtMethod oneMethod: methods){
                         if(oneMethod.getName().equals("checkTrusted")){
