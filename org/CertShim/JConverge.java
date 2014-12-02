@@ -26,21 +26,18 @@ public class JConverge implements SSLCheckable {
 
     static Boolean debug = true;
 
-//    public static void main(String[] args){
-//        JConverge jc = new JConverge();
-//        System.out.println( jc.check(args[0], args[1]) );
-//    }
-
     public boolean check(SSLSession session) {
         /* Initialize */
-        System.out.println("JConverge Starts.");
+        if(debug) {
+            System.out.println("[+]JConverge Starts.");
+        }
         try {
             init();
+            //disableCertificateValidation();
         } catch (Exception e) {
             if (debug)
                 System.out.println("[-] Initialization failed");
             e.printStackTrace();
-            System.exit(1);
         }
         /* Bail if we have wrong number of args */
 
@@ -53,7 +50,6 @@ public class JConverge implements SSLCheckable {
                 if (debug)
                     System.out.println("[-] Failed to retrieve fingerprint");
                 e.printStackTrace();
-                System.exit(1);
             }
 
         /* Perform lookup */
@@ -62,15 +58,12 @@ public class JConverge implements SSLCheckable {
                     host, port, fingerprint));
         boolean result = notarize(host, port, fingerprint);
         System.out.println(result);
-        /* We're golden */
         if (result) {
-            System.out.println("Yeah!");
-            System.exit(0);
+            if(debug)
+                System.out.println("Checking passed.");
+            return result;
         }
-
-        /* We're fucked */
-        System.out.println("Fuck!");
-        System.exit(1);
+        System.out.println("Checking not passed.");
         return result;
     }
 
@@ -121,6 +114,7 @@ public class JConverge implements SSLCheckable {
         System.out.println(httpsUrl);
         URL url = new URL(httpsUrl);
         HttpsURLConnection con = (HttpsURLConnection) url.openConnection();
+        disableCertificateValidation(con);
         con.getResponseCode();
 
         /* Get out x509 cert */
@@ -279,6 +273,7 @@ public class JConverge implements SSLCheckable {
                 URL request = new URL(url);
                 HttpsURLConnection connection = (HttpsURLConnection) request
                         .openConnection();
+                disableCertificateValidation(connection);
                 connection.setDoOutput(true);
                 connection.setDoInput(true);
                 connection.setInstanceFollowRedirects(false);
@@ -358,7 +353,7 @@ public class JConverge implements SSLCheckable {
     public void remoteCheck(String remoteHost, String remotePort, String fingerprint) {
 
         /* Note we don't check SSL validity upon request */
-        disableCertificateValidation();
+        //disableCertificateValidation();
 
         /* Loop over all notaries */
 
@@ -396,7 +391,11 @@ public class JConverge implements SSLCheckable {
     }
 
     /* Source: https://gist.github.com/henrik242/1510165 */
-    public void disableCertificateValidation() {
+    public void disableCertificateValidation(HttpsURLConnection targetConn) {
+        /*
+        * This function is used to disable the call to X509TrustManagerImpl. So that it won't cause a infinite loop.
+        *
+        * */
         // Create a trust manager that does not validate certificate chains
         TrustManager[] trustAllCerts = new TrustManager[] { new X509TrustManager() {
             public X509Certificate[] getAcceptedIssuers() {
@@ -423,9 +422,9 @@ public class JConverge implements SSLCheckable {
         try {
             SSLContext sc = SSLContext.getInstance("SSL");
             sc.init(null, trustAllCerts, new SecureRandom());
-            HttpsURLConnection
-                    .setDefaultSSLSocketFactory(sc.getSocketFactory());
-            HttpsURLConnection.setDefaultHostnameVerifier(hv);
+            targetConn
+                    .setSSLSocketFactory(sc.getSocketFactory());
+            targetConn.setHostnameVerifier(hv);
         } catch (Exception e) {
         }
     }

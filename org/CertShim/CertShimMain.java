@@ -31,7 +31,7 @@ public class CertShimMain{
 
 
     public static void check(SSLSession session) throws CertificateException{
-        System.out.println("CertShim Main Starts.");
+//        System.out.println("CertShim Main Starts.");
         if(session==null){
             System.out.println("Null session");
             throw new CertificateException("No session. CertShim can't do verification.");
@@ -63,6 +63,8 @@ public class CertShimMain{
         }
         /*TODO Handle the produced results*/
         System.out.format("CertShim: There are %d out of %d verification passed.\n", counter, finalResults.length);
+        if(counter==0)
+            throw new CertificateException();
     }
 }
 class CheckThread implements Callable<Boolean>{

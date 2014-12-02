@@ -57,7 +57,7 @@ class CertShimTrans implements ClassFileTransformer{
                 case "javax/net/ssl/SSLParameters":
                     System.out.println(className);
                     curClass=pool.get(className.replace('/','.'));
-                    insertedCode="{ if($1==null) $1=\"HTTPS\"; System.out.println(\"Algorithm set.\");}";
+                    insertedCode="{ if($1==null) $1=\"HTTPS\";}";
                     method=curClass.getDeclaredMethod("setEndpointIdentificationAlgorithm");
                     method.insertBefore(insertedCode);
                     break;
