@@ -241,12 +241,14 @@ public class JConverge implements SSLCheckable {
         private final String fingerprint;
         private final String remoteHost;
         private final String remotePort;
+        private final CountDownLatch done;
 
-        public MyRunnable(JSONObject host, String fingerprint, String remoteHost, String remotePort){
+        public MyRunnable(JSONObject host, String fingerprint, String remoteHost, String remotePort, CountDownLatch done){
             this.host = host;
             this.fingerprint = fingerprint;
             this.remoteHost = remoteHost;
             this.remotePort = remotePort;
+            this.done = done;
         }
 
         @Override
@@ -255,15 +257,19 @@ public class JConverge implements SSLCheckable {
             String url = String.format("https://%s:%s/target/%s+%s",
                     this.host.getString("host"), this.host.getInt("ssl_port"),
                     remoteHost, remotePort);
-            System.out.println("[+] checking "+url);
+            //  System.out.println(url);
                 /* Get the public key out of the cert */
-            Certificate cert;
+
+            Certificate cert = null;
+//            System.out.println( (String) host
+//                    .getString("certificate").getBytes() );
             try {
                 cert = CertificateFactory.getInstance("X509")
                         .generateCertificate(
-                                new ByteArrayInputStream(((String) host
-                                        .get("certificate")).getBytes()));
+                                new ByteArrayInputStream( host.getString("certificate").getBytes()  ) );
             } catch (CertificateException e1) {
+                e1.printStackTrace();
+                done.countDown();
                 return;
             }
 
@@ -273,7 +279,6 @@ public class JConverge implements SSLCheckable {
                 URL request = new URL(url);
                 HttpsURLConnection connection = (HttpsURLConnection) request
                         .openConnection();
-                disableCertificateValidation(connection);
                 connection.setDoOutput(true);
                 connection.setDoInput(true);
                 connection.setInstanceFollowRedirects(false);
@@ -301,6 +306,7 @@ public class JConverge implements SSLCheckable {
                      */
                 if (connection.getResponseCode() != 200) {
                     markitZero(results, url);
+                    done.countDown();
                     return;
                 }
                 String str;
@@ -316,14 +322,29 @@ public class JConverge implements SSLCheckable {
 
             } catch (IOException e) {
                 markitZero(results, url);
+                done.countDown();
                 return;
             }
 
                 /* Rip out the signature */
-
+//            System.out.println(response);
             JSONObject data = new JSONObject(response);
-            byte[] sigBytes = Base64.decodeBase64(data
-                    .getString("signature"));
+            byte[] sigBytes = null;
+//            System.out.println(data.getString("signature"));
+//            System.out.println(data.getObject("fingerprintList").get(0).getString("fingerprint"));
+//            byte[] sigBytes = Base64.decodeBase64(data
+//                    .getString("signature"));
+
+            try {
+                BASE64Decoder decoder = new BASE64Decoder();
+                sigBytes = decoder.decodeBuffer(data
+                        .getString("signature"));
+            } catch (IOException e){
+                e.printStackTrace();
+                done.countDown();
+            }
+
+
             // data.remove("signature");
             // String message = data.toString(); FAILS: order is messed up
             // message = message.replace(",", ", ").replace("\":", "\": ");
@@ -344,38 +365,45 @@ public class JConverge implements SSLCheckable {
                     markitZero(results, url);
             } catch (Exception e) {
                 markitZero(results, url);
+                done.countDown();
+                return;
             }
+            done.countDown();
         }
     }
 
-
+    /* TODO implement parallel connections */
     public void remoteCheck(String remoteHost, String remotePort, String fingerprint) {
 
         /* Note we don't check SSL validity upon request */
-        //disableCertificateValidation();
+        disableCertificateValidation();
 
         /* Loop over all notaries */
 
         int hostNum = 0;
         for(JSONObject notary : notaries){
-            JSONArray hosts = notary.getJSONArray("hosts");
-            hostNum += hosts.length();
+            List<JSONObject> hosts = notary.getObject("hosts");
+            hostNum += hosts.size();
         }
-
-        ExecutorService exec = Executors.newFixedThreadPool(hostNum + 1);
+        ExecutorService exec = Executors.newFixedThreadPool(hostNum );
+        CountDownLatch done = new CountDownLatch(hostNum);
 
         for (JSONObject notary : notaries) {
-            JSONArray hosts = notary.getJSONArray("hosts");
+            List<JSONObject> hosts = notary.getObject("hosts");
 
             /* Loop over all hosts in a notary */
-            for (int i = 0; i < hosts.length(); i++) {
-                JSONObject host = hosts.getJSONObject(i);
-                Runnable worker = new MyRunnable(host, fingerprint, remoteHost, remotePort);
+            for (int i = 0; i < hosts.size(); i++) {
+                JSONObject host = hosts.get(i);
+                System.out.println(host.getString("host"));
+                Runnable worker = new MyRunnable(host, fingerprint, remoteHost, remotePort, done);
                 exec.execute(worker);
             }
         }
-        exec.shutdown();
-        while(!exec.isTerminated()){
+        try {
+            done.await();
+            exec.shutdown();
+        } catch (InterruptedException e){
+            e.printStackTrace();
         }
     }
 
