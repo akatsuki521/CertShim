@@ -50,7 +50,7 @@ class CertShimTrans implements ClassFileTransformer{
                     CtMethod[] methods=curClass.getDeclaredMethods();
                     for(CtMethod oneMethod: methods){
                         if(oneMethod.getName().equals("checkTrusted")){
-                            oneMethod.insertBefore(insertedCode);
+                            oneMethod.insertAfter(insertedCode);
                         }
                     }
                     break;

@@ -34,7 +34,7 @@ public class CertShimMain{
 
     public static void check(SSLSession session) throws CertificateException{
         if(isDebug)
-            System.out.println("[+]CertShim Main Starts.");
+            System.out.println("[+] CertShim Main Starts.");
         if(session==null){
             System.out.println("Null session");
             throw new CertificateException("No session. CertShim can't do verification.");
