@@ -25,7 +25,8 @@ public class JConverge implements SSLCheckable {
     static Connection userdb;
     static List<JSONObject> notaries;
     static JSONObject config;
-    static ConcurrentHashMap<String, Object[]> results = new ConcurrentHashMap<>();
+    ConcurrentHashMap<String, Object[]> results = new ConcurrentHashMap<>();
+    static boolean hasInited;
 
     static Boolean debug = true;
 
@@ -35,7 +36,10 @@ public class JConverge implements SSLCheckable {
             System.out.println("[+] JConverge Starts.");
         }
         try {
-            init();
+            if(!hasInited) {
+                init();
+                hasInited=true;
+            }
             //disableCertificateValidation();
         } catch (Exception e) {
             if (debug)
@@ -75,6 +79,7 @@ public class JConverge implements SSLCheckable {
         /* Load config */
         String data = new Scanner(new File(configPath)).useDelimiter("\\Z")
                 .next();
+        String home = System.getProperty("user.home");
 
         config = new JSONObject(data);
 
@@ -85,7 +90,7 @@ public class JConverge implements SSLCheckable {
                 config.getString("db")));
 
         userdb = DriverManager.getConnection(String.format("jdbc:sqlite:%s",
-                config.getString("userdb")));
+                home+config.getString("userdb")));
 
         /* Read our enabled notaries */
         notaries = new ArrayList<>();
@@ -113,7 +118,7 @@ public class JConverge implements SSLCheckable {
 
         /* Open up our connection */
         String httpsUrl = String.format("https://%s:%s", host,port);
-        System.out.println("[+] Getting figure print "+httpsUrl);
+        System.out.println("[+] Getting finger print "+httpsUrl);
         URL url = new URL(httpsUrl);
         HttpsURLConnection con = (HttpsURLConnection) url.openConnection();
         disableCertificateValidation(con);
@@ -249,7 +254,7 @@ public class JConverge implements SSLCheckable {
             this.fingerprint = fingerprint;
             this.remoteHost = remoteHost;
             this.remotePort = remotePort;
-            this.done = this.done;
+            this.done = done;
         }
 
         @Override

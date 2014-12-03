@@ -24,8 +24,7 @@ class CertShimTrans implements ClassFileTransformer{
     public byte[] transform(ClassLoader classLoader, String className, Class<?> arg2, ProtectionDomain arg3, byte[] bytes)
         throws IllegalClassFormatException{
 
-        //System.out.println("Invoked class name: "+className);
-        ClassPool pool=ClassPool.getDefault();
+        ClassPool pool = ClassPool.getDefault();
         CtClass curClass;
         String insertedCode;
         CtMethod method;
@@ -41,13 +40,13 @@ class CertShimTrans implements ClassFileTransformer{
                 *
                 * */
                 case "sun/security/ssl/X509TrustManagerImpl":
-                    curClass=pool.get(className.replace('/','.'));
+                    curClass = pool.get(className.replace('/','.'));
                     System.out.println(className);
-                    insertedCode="{if($3==null) $3=\"HTTPS\";}";
-                    method=curClass.getDeclaredMethod("checkIdentity");
+                    insertedCode = "{if($3==null) $3=\"HTTPS\";}";
+                    method = curClass.getDeclaredMethod("checkIdentity");
                     method.insertBefore(insertedCode);
-                    insertedCode="{if(!$4) org.CertShim.CertShimMain.check($3);}";
-                    CtMethod[] methods=curClass.getDeclaredMethods();
+                    insertedCode = "{if(!$4) org.CertShim.CertShimMain.check($3);}";
+                    CtMethod[] methods = curClass.getDeclaredMethods();
                     for(CtMethod oneMethod: methods){
                         if(oneMethod.getName().equals("checkTrusted")){
                             oneMethod.insertAfter(insertedCode);
@@ -56,9 +55,9 @@ class CertShimTrans implements ClassFileTransformer{
                     break;
                 case "javax/net/ssl/SSLParameters":
                     System.out.println(className);
-                    curClass=pool.get(className.replace('/','.'));
-                    insertedCode="{ if($1==null) $1=\"HTTPS\";}";
-                    method=curClass.getDeclaredMethod("setEndpointIdentificationAlgorithm");
+                    curClass = pool.get(className.replace('/','.'));
+                    insertedCode = "{ if($1==null) $1=\"HTTPS\";}";
+                    method = curClass.getDeclaredMethod("setEndpointIdentificationAlgorithm");
                     method.insertBefore(insertedCode);
                     break;
                 default:return null;
