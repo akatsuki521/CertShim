@@ -2,7 +2,7 @@ This is CertShim Java version.
 
 Motivation:
 
-According to "The Most Dangerous Code in the Word: Validating SSL certificates in Non-Browser Software", JSSE API is misused in several security critical applications. By default, JSSE doesn't turning on hostname verification. Thus the applications is vulnerable to Man-In-The-Middle(MITM) attack.
+According to "The Most Dangerous Code in the Word: Validating SSL certificates in Non-Browser Software", JSSE API is misused in several security critical applications. By default, JSSE doesn't turning on hostname verification. Making the applications vulnerable to Man-In-The-Middle(MITM) attack.
 This project is aimed at correcting SSL(JSSE) API misuse and provide additional method to validate a certificate. Thus protect users from MITM attack.
 
 Implementation:
